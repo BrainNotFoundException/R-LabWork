@@ -1,0 +1,103 @@
+---
+title: "LAB Assessment 4"
+author: "Lavnish Jhunjhunwala - 24BCE2127"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    theme: cosmo
+---
+
+# Exercises:
+Installing required packages:
+``` {r}
+install.packages(c("nycflights13", "tidyverse", "moments"))
+```
+
+Loading required packages:
+``` {r}
+library(nycflights13)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(moments)
+```
+
+---
+## 1
+
+### Problem Statement:
+    **Arrival Delay Analysis**:
+    Calculate the mean, median, and standard deviation for `arr_delay` (arrival delays). How do these compare to the statistics for departure delays calculated earlier?
+
+### Problem Solution:
+``` {r}
+
+```
+
+
+
+## 2
+
+### Problem Statement:
+    **Carrier Variability**:
+    Which airline carrier has the most consistent arrival times? Calculate the standard deviation of `arr_delay` for each carrier and identify the one with the lowest value.
+
+
+### Problem Solution:
+``` {r}
+```
+
+## 3
+
+### Problem Statement:
+    **Speed Distribution**:
+    Create a new variable called `speed_mph` by calculating `distance / (air_time / 60)`.
+    - Calculate the mean and median speed.
+    - Visualize the distribution of flight speeds using a histogram.
+    - Is the distribution symmetric or skewed? Calculate the skewness to confirm.
+
+### Problem Solution:
+```{r}
+```
+
+## 4
+
+### Problem Statement:
+    **Interval Data Statistics**:
+    Convert the `dep_delay` variable from point data to interval data (grouped data) by creating bins (e.g., using `cut()`).
+    - Redo the statistics (mean, standard deviation, and quartiles).
+    - Compare the results with the statistics calculated from the original point data.
+
+### Problem Solution:
+``` {r}
+```
+
+
+## 5
+
+### Problem Statement:
+    **Random Variables and Distributions**:
+    Let $X$ be the random variable representing departure delay.
+    - Calculate the expected value $E[X]$ and variance $Var(X)$ from the data.
+    - Visualize the probability density function (PDF) of $X$.
+    - Based on the shape, skewness, and kurtosis, discuss which theoretical distribution might fit the data.
+
+### Problem Solution:
+```{r}
+```
+
+
+## 6
+
+### Problem Statement:
+    **On-time Performance Test**:
+    Conduct a hypothesis test to check if there is an association between the origin airport (`origin`) and whether a flight arrives on time (within 5 minutes of scheduled arrival).
+    - Create a contingency table.
+    - Run a Chi-squared test.
+    - Interpret the results.
+
+### Problem Solution:
+```{r}
+```
