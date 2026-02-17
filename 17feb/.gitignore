@@ -1,0 +1,18 @@
+# R specific
+.Rhistory
+.RData
+.Rproject.user/
+*.Rproj
+.DS_Store
+
+# Output files
+output/*
+!output/.gitkeep
+
+# Data files (optionally ignore large data)
+# data/*
+# !data/.gitkeep
+
+# Cache
+.cache/
+.Rcache/
