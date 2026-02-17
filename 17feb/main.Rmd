@@ -15,13 +15,16 @@ Installing required packages:
 install.packages(c("nycflights13", "tidyverse", "moments"))
 ```
 
-Loading required packages:
+Loading required packages and datasets:
 ``` {r}
 library(nycflights13)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(moments)
+
+data(flights)
+head(flights)
 ```
 
 ---
@@ -33,8 +36,11 @@ library(moments)
 
 ### Problem Solution:
 ``` {r}
-
+mean(flights$arr_delay, na.rm = TRUE)
+median(flights$arr_delay, na.rm = TRUE)
+sd(flights$arr_delay, na.rm = TRUE)
 ```
+We see a lower mean arrival delay and lower median arrival delay but a higher standard deviation in arrival delay in comparison to the departure delays calculated earlier.
 ---
 
 ---
