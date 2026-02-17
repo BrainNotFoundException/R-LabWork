@@ -1,0 +1,621 @@
+---
+title: "Module 1: Introduction to Statistics"
+author: "Statistics Course"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+# Introduction to Statistics
+
+## Overview
+In this module, we explore fundamental statistical concepts including:
+- Statistics and Data Analysis
+- Measures of Central Tendency
+- Measures of Dispersion
+- Moments, Skewness, and Kurtosis
+
+We'll use the `nycflights13` dataset to demonstrate these concepts with real-world data.
+
+---
+
+## Data Preparation
+
+First, let's load the necessary libraries and explore the NYC flights dataset:
+
+```{r load_data}
+# Install packages if needed (uncomment to run)
+# install.packages(c("nycflights13", "tidyverse", "moments"))
+
+library(nycflights13)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(moments)
+
+# Load the flights dataset
+data(flights)
+
+# Display basic information
+head(flights)
+cat("\nDataset dimensions:", nrow(flights), "rows x", ncol(flights), "columns\n")
+cat("\nColumn names:\n")
+print(names(flights))
+```
+
+---
+
+## 1. Statistics and Data Analysis
+
+Statistics involves collecting, analyzing, and interpreting data to understand patterns and relationships.
+
+### What is Statistical Data Analysis?
+
+Statistical data analysis helps us:
+- Describe the characteristics of data
+- Make inferences about populations
+- Test hypotheses
+- Predict future trends
+
+### Example: Airline Delay Analysis
+
+Let's analyze departure delays across different airlines:
+
+```{r data_analysis}
+# Create a summary of airlines in the dataset
+airline_summary <- flights %>%
+  group_by(carrier) %>%
+  summarise(
+    n_flights = n(),
+    avg_delay = mean(dep_delay, na.rm = TRUE),
+    max_delay = max(dep_delay, na.rm = TRUE),
+    min_delay = min(dep_delay, na.rm = TRUE)
+  ) %>%
+  arrange(desc(avg_delay))
+
+print(airline_summary)
+
+# Visualize average delays by airline
+ggplot(airline_summary, aes(x = reorder(carrier, avg_delay), y = avg_delay)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Average Departure Delay by Airline",
+       x = "Airline",
+       y = "Average Delay (minutes)") +
+  theme_minimal()
+```
+
+---
+
+## 2. Measures of Central Tendency
+
+Central tendency measures describe the "center" or typical value of a dataset.
+
+### Types of Central Tendency
+
+**2.1 Mean (Average)**
+
+The arithmetic mean is the sum of all values divided by the count of values.
+
+$$\bar{x} = \frac{1}{n}\sum_{i=1}^{n} x_i$$
+
+```{r mean}
+# Calculate mean departure delay
+mean_delay <- mean(flights$dep_delay, na.rm = TRUE)
+cat("Mean departure delay:", round(mean_delay, 2), "minutes\n")
+
+# By month
+mean_by_month <- flights %>%
+  group_by(month) %>%
+  summarise(mean_delay = mean(dep_delay, na.rm = TRUE),
+            .groups = 'drop')
+
+print(mean_by_month)
+
+# Visualize mean delays by month
+ggplot(mean_by_month, aes(x = month, y = mean_delay)) +
+  geom_line(color = "darkblue", size = 1) +
+  geom_point(color = "red", size = 2) +
+  labs(title = "Mean Departure Delay by Month",
+       x = "Month",
+       y = "Mean Delay (minutes)") +
+  theme_minimal() +
+  scale_x_continuous(breaks = 1:12)
+```
+
+**2.2 Median (Middle Value)**
+
+The median is the middle value when data is sorted. It divides the dataset into two equal halves.
+
+```{r median}
+# Calculate median departure delay
+median_delay <- median(flights$dep_delay, na.rm = TRUE)
+cat("Median departure delay:", median_delay, "minutes\n")
+
+# Compare mean vs median for each month
+comparison <- flights %>%
+  group_by(month) %>%
+  summarise(
+    mean_delay = mean(dep_delay, na.rm = TRUE),
+    median_delay = median(dep_delay, na.rm = TRUE),
+    .groups = 'drop'
+  )
+
+print(comparison)
+
+# Visualize comparison
+comparison_long <- comparison %>%
+  pivot_longer(cols = c(mean_delay, median_delay),
+               names_to = "measure",
+               values_to = "delay")
+
+ggplot(comparison_long, aes(x = month, y = delay, color = measure)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  labs(title = "Mean vs Median Departure Delay by Month",
+       x = "Month",
+       y = "Delay (minutes)",
+       color = "Measure") +
+  theme_minimal() +
+  scale_x_continuous(breaks = 1:12)
+```
+
+**2.3 Mode (Most Frequent Value)**
+
+The mode is the value that appears most frequently in the dataset.
+
+```{r mode}
+# Calculate mode
+calculate_mode <- function(x) {
+  freq <- table(x)
+  as.numeric(names(freq)[which.max(freq)])
+}
+
+# Mode is often used for categorical data
+mode_origin <- calculate_mode(flights$origin)
+cat("Mode of origin:", mode_origin, "\n")
+
+# Frequency of origins
+origin_freq <- flights %>%
+  group_by(origin) %>%
+  summarise(count = n(), .groups = 'drop') %>%
+  arrange(desc(count))
+
+print(origin_freq)
+
+# Visualize
+ggplot(origin_freq, aes(x = reorder(origin, -count), y = count)) +
+  geom_col(fill = "darkgreen") +
+  labs(title = "Frequency of Flight Origins",
+       x = "Airport",
+       y = "Number of Flights") +
+  theme_minimal()
+```
+
+**Comparison of Central Tendency Measures:**
+
+```{r central_tendency_comparison}
+# Overall comparison
+cat("=== Central Tendency Measures for Departure Delay ===\n")
+cat("Mean:  ", round(mean(flights$dep_delay, na.rm = TRUE), 2), "minutes\n")
+cat("Median:", median(flights$dep_delay, na.rm = TRUE), "minutes\n")
+cat("Mode:  ", calculate_mode(round(flights$dep_delay)), "minutes\n")
+
+# Summary statistics
+cat("\n=== Summary Statistics ===\n")
+print(summary(flights$dep_delay))
+```
+
+---
+
+## 3. Measures of Dispersion
+
+Dispersion measures describe the spread or variability of data around the center.
+
+### 3.1 Range
+
+Range is the difference between the maximum and minimum values.
+
+$$\text{Range} = \max(x) - \min(x)$$
+
+```{r range}
+range_delay <- max(flights$dep_delay, na.rm = TRUE) - min(flights$dep_delay, na.rm = TRUE)
+cat("Range of departure delay:", range_delay, "minutes\n")
+cat("Min delay:", min(flights$dep_delay, na.rm = TRUE), "minutes\n")
+cat("Max delay:", max(flights$dep_delay, na.rm = TRUE), "minutes\n")
+```
+
+### 3.2 Variance
+
+Variance measures the average squared deviation from the mean.
+
+$$s^2 = \frac{1}{n}\sum_{i=1}^{n} (x_i - \bar{x})^2$$
+
+```{r variance}
+var_delay <- var(flights$dep_delay, na.rm = TRUE)
+cat("Variance of departure delay:", round(var_delay, 2), "\n")
+
+# By airline
+var_by_airline <- flights %>%
+  group_by(carrier) %>%
+  summarise(
+    variance = var(dep_delay, na.rm = TRUE),
+    n = n(),
+    .groups = 'drop'
+  ) %>%
+  arrange(desc(variance))
+
+print(var_by_airline)
+```
+
+### 3.3 Standard Deviation
+
+Standard deviation is the square root of variance, expressing dispersion in original units.
+
+$$s = \sqrt{\frac{1}{n}\sum_{i=1}^{n} (x_i - \bar{x})^2}$$
+
+```{r standard_deviation}
+sd_delay <- sd(flights$dep_delay, na.rm = TRUE)
+cat("Standard deviation of departure delay:", round(sd_delay, 2), "minutes\n")
+
+# By month
+sd_by_month <- flights %>%
+  group_by(month) %>%
+  summarise(
+    sd_delay = sd(dep_delay, na.rm = TRUE),
+    mean_delay = mean(dep_delay, na.rm = TRUE),
+    .groups = 'drop'
+  )
+
+print(sd_by_month)
+
+# Visualize with confidence bands
+ggplot(sd_by_month, aes(x = month, y = mean_delay)) +
+  geom_line(color = "darkblue", size = 1) +
+  geom_point(color = "red", size = 2) +
+  geom_ribbon(aes(ymin = mean_delay - sd_delay, ymax = mean_delay + sd_delay),
+              alpha = 0.2, fill = "blue") +
+  labs(title = "Mean Departure Delay with Standard Deviation Band",
+       x = "Month",
+       y = "Delay (minutes)") +
+  theme_minimal() +
+  scale_x_continuous(breaks = 1:12)
+```
+
+### 3.4 Quartiles and Interquartile Range (IQR)
+
+Quartiles divide the data into four equal parts.
+
+```{r quartiles}
+# Calculate quartiles
+q1 <- quantile(flights$dep_delay, 0.25, na.rm = TRUE)
+q2 <- quantile(flights$dep_delay, 0.50, na.rm = TRUE)  # Median
+q3 <- quantile(flights$dep_delay, 0.75, na.rm = TRUE)
+iqr <- q3 - q1
+
+cat("Q1 (25th percentile):", q1, "\n")
+cat("Q2 (50th percentile/Median):", q2, "\n")
+cat("Q3 (75th percentile):", q3, "\n")
+cat("Interquartile Range (IQR):", iqr, "\n")
+
+# Box plot by airline
+ggplot(flights, aes(x = carrier, y = dep_delay)) +
+  geom_boxplot(fill = "lightblue", outlier.alpha = 0.3) +
+  labs(title = "Distribution of Departure Delays by Airline",
+       x = "Airline",
+       y = "Departure Delay (minutes)") +
+  theme_minimal() +
+  ylim(-20, 150)  # Limit y-axis for better visualization
+```
+
+### 3.5 Coefficient of Variation
+
+CV measures relative variability as a percentage of the mean.
+
+$$CV = \frac{s}{\bar{x}} \times 100\%$$
+
+```{r cv}
+mean_delay <- mean(flights$dep_delay, na.rm = TRUE)
+sd_delay <- sd(flights$dep_delay, na.rm = TRUE)
+cv <- (sd_delay / mean_delay) * 100
+
+cat("Coefficient of Variation:", round(cv, 2), "%\n")
+
+# By airline
+cv_by_airline <- flights %>%
+  group_by(carrier) %>%
+  summarise(
+    mean = mean(dep_delay, na.rm = TRUE),
+    sd = sd(dep_delay, na.rm = TRUE),
+    cv = (sd / mean) * 100,
+    .groups = 'drop'
+  ) %>%
+  arrange(desc(cv))
+
+print(cv_by_airline)
+```
+
+---
+
+## 4. Moments, Skewness, and Kurtosis
+
+### 4.1 Moments
+
+Moments describe the shape and characteristics of a distribution.
+
+**Raw Moments:** $m_r = \frac{1}{n}\sum_{i=1}^{n} (x_i)^r$
+
+**Central Moments:** $\mu_r = \frac{1}{n}\sum_{i=1}^{n} (x_i - \bar{x})^r$
+
+```{r moments}
+# Calculate moments
+m1 <- mean(flights$dep_delay, na.rm = TRUE)
+m2 <- mean((flights$dep_delay - m1)^2, na.rm = TRUE)
+m3 <- mean((flights$dep_delay - m1)^3, na.rm = TRUE)
+m4 <- mean((flights$dep_delay - m1)^4, na.rm = TRUE)
+
+cat("First moment (Mean):", round(m1, 2), "\n")
+cat("Second moment (Variance):", round(m2, 2), "\n")
+cat("Third moment:", round(m3, 2), "\n")
+cat("Fourth moment:", round(m4, 2), "\n")
+```
+
+### 4.2 Skewness
+
+Skewness measures the asymmetry of the distribution.
+
+$$\text{Skewness} = \frac{\mu_3}{s^3}$$
+
+- **Skewness = 0**: Symmetric distribution
+- **Skewness > 0**: Right-skewed (positively skewed)
+- **Skewness < 0**: Left-skewed (negatively skewed)
+
+```{r skewness}
+# Calculate skewness
+skewness_value <- skewness(flights$dep_delay, na.rm = TRUE)
+cat("Skewness of departure delay:", round(skewness_value, 3), "\n")
+
+if (skewness_value > 0.5) {
+  cat("Interpretation: Right-skewed (positive skew) distribution\n")
+} else if (skewness_value < -0.5) {
+  cat("Interpretation: Left-skewed (negative skew) distribution\n")
+} else {
+  cat("Interpretation: Approximately symmetric distribution\n")
+}
+
+# Skewness by month
+skewness_by_month <- flights %>%
+  group_by(month) %>%
+  summarise(
+    skewness = skewness(dep_delay, na.rm = TRUE),
+    .groups = 'drop'
+  )
+
+print(skewness_by_month)
+
+# Visualize
+ggplot(skewness_by_month, aes(x = month, y = skewness)) +
+  geom_col(fill = "steelblue") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Skewness of Departure Delays by Month",
+       x = "Month",
+       y = "Skewness") +
+  theme_minimal() +
+  scale_x_continuous(breaks = 1:12)
+
+# Distribution histogram with density curve
+ggplot(flights, aes(x = dep_delay)) +
+  geom_histogram(aes(y = ..density..), bins = 50, fill = "lightblue", color = "black") +
+  geom_density(color = "red", size = 1) +
+  labs(title = "Distribution of Departure Delays (Showing Skewness)",
+       x = "Departure Delay (minutes)",
+       y = "Density") +
+  theme_minimal() +
+  xlim(-20, 200)
+```
+
+### 4.3 Kurtosis
+
+Kurtosis measures the "tailedness" or peakedness of the distribution.
+
+$$\text{Kurtosis} = \frac{\mu_4}{s^4} - 3$$
+
+- **Excess Kurtosis = 0**: Mesokurtic (Normal distribution)
+- **Excess Kurtosis > 0**: Leptokurtic (Heavy tails, sharp peak)
+- **Excess Kurtosis < 0**: Platykurtic (Light tails, flat peak)
+
+```{r kurtosis}
+# Calculate kurtosis (excess kurtosis)
+kurtosis_value <- kurtosis(flights$dep_delay, na.rm = TRUE)
+cat("Excess Kurtosis of departure delay:", round(kurtosis_value, 3), "\n")
+
+if (kurtosis_value > 0) {
+  cat("Interpretation: Leptokurtic - Heavy tails with sharp peak\n")
+} else if (kurtosis_value < 0) {
+  cat("Interpretation: Platykurtic - Light tails with flat peak\n")
+} else {
+  cat("Interpretation: Mesokurtic - Similar to normal distribution\n")
+}
+
+# Kurtosis by month
+kurtosis_by_month <- flights %>%
+  group_by(month) %>%
+  summarise(
+    kurtosis = kurtosis(dep_delay, na.rm = TRUE),
+    .groups = 'drop'
+  )
+
+print(kurtosis_by_month)
+
+# Visualize
+ggplot(kurtosis_by_month, aes(x = month, y = kurtosis)) +
+  geom_col(fill = "darkgreen") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Kurtosis of Departure Delays by Month",
+       x = "Month",
+       y = "Excess Kurtosis") +
+  theme_minimal() +
+  scale_x_continuous(breaks = 1:12)
+```
+
+---
+
+## 5. Hypothesis Test: On-time departures predict on-time arrivals
+
+  We test the hypothesis: "Flights that left within 5 minutes of their scheduled departure arrived within 5 minutes of their scheduled arrival." Below we filter the data, create logical indicators for leaving/arriving within ±5 minutes, show contingency counts and proportions, run an appropriate test of association (chi-squared or Fisher's exact), compute conditional probabilities, plot the results, and provide a brief interpretation.
+
+  ```{r hypothesis-test, echo=TRUE, message=FALSE, warning=FALSE}
+  library(dplyr)
+  library(ggplot2)
+
+  # Filter and create indicators
+  fl_ht <- flights %>%
+    filter(!is.na(dep_delay), !is.na(arr_delay)) %>%
+    mutate(
+      left_on_time = abs(dep_delay) <= 5,
+      arrived_on_time = abs(arr_delay) <= 5
+    )
+
+  # Contingency table and row proportions
+  tab <- table(Left = fl_ht$left_on_time, Arrived = fl_ht$arrived_on_time)
+  tab
+
+  prop_tab <- prop.table(tab, margin = 1)
+  round(prop_tab, 3)
+
+  # Statistical test: chi-squared if expected counts are large enough, otherwise Fisher's exact
+  # Use suppressWarnings when computing expected to avoid extra output if assumptions borderline
+  expected <- suppressWarnings(chisq.test(tab))$expected
+  use_fisher <- any(expected < 5)
+
+  if (use_fisher) {
+    test_result <- fisher.test(tab)
+  } else {
+    test_result <- chisq.test(tab)
+  }
+  test_result
+
+  # Conditional probabilities
+  P_arrive_if_left <- prop_tab["TRUE", "TRUE"]
+  P_arrive_if_not_left <- prop_tab["FALSE", "TRUE"]
+  cat(sprintf("P(arrived_on_time | left_on_time) = %.3f\n", P_arrive_if_left))
+  cat(sprintf("P(arrived_on_time | NOT left_on_time) = %.3f\n", P_arrive_if_not_left))
+
+  # Visualization: proportion arrived on time by whether flight left on time
+  viz_df <- fl_ht %>%
+    group_by(left_on_time) %>%
+    summarize(n = n(), prop_arrived_on_time = mean(arrived_on_time), .groups = "drop")
+
+  ggplot(viz_df, aes(x = factor(left_on_time), y = prop_arrived_on_time, fill = factor(left_on_time))) +
+    geom_col() +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+    labs(x = "Left within 5 min of scheduled departure?", y = "Proportion arrived within 5 min",
+         title = "Arrival punctuality by departure punctuality") +
+    theme_minimal() +
+    scale_x_discrete(labels = c("FALSE" = "No", "TRUE" = "Yes")) +
+    guides(fill = "none")
+
+  ```
+
+  **Interpretation (how to read results):**
+
+  - The contingency table shows counts of flights that arrived on time or not, split by whether they left on time.
+  - The chi-squared (or Fisher) test reports whether there is evidence of association between departure punctuality and arrival punctuality. A small p-value (e.g., < 0.05) indicates an association.
+  - The conditional probabilities P(arrived_on_time | left_on_time) and P(arrived_on_time | NOT left_on_time) give practical measures of how predictive departure punctuality is for arrival punctuality.
+
+  Note: This is observational data; association does not imply causation.
+
+---
+
+## 6. Summary: Complete Statistical Profile
+
+Let's create a comprehensive summary of all statistical measures:
+
+```{r summary_stats}
+# Comprehensive statistical summary
+summary_stats <- data.frame(
+  Measure = c("Mean", "Median", "Std Dev", "Variance", "Range", "Q1", "Q3", "IQR", 
+              "Skewness", "Kurtosis", "CV (%)"),
+  Value = c(
+    round(mean(flights$dep_delay, na.rm = TRUE), 2),
+    median(flights$dep_delay, na.rm = TRUE),
+    round(sd(flights$dep_delay, na.rm = TRUE), 2),
+    round(var(flights$dep_delay, na.rm = TRUE), 2),
+    max(flights$dep_delay, na.rm = TRUE) - min(flights$dep_delay, na.rm = TRUE),
+    quantile(flights$dep_delay, 0.25, na.rm = TRUE),
+    quantile(flights$dep_delay, 0.75, na.rm = TRUE),
+    quantile(flights$dep_delay, 0.75, na.rm = TRUE) - quantile(flights$dep_delay, 0.25, na.rm = TRUE),
+    round(skewness(flights$dep_delay, na.rm = TRUE), 3),
+    round(kurtosis(flights$dep_delay, na.rm = TRUE), 3),
+    round((sd(flights$dep_delay, na.rm = TRUE) / mean(flights$dep_delay, na.rm = TRUE)) * 100, 2)
+  )
+)
+
+cat("=== COMPLETE STATISTICAL SUMMARY ===\n")
+print(summary_stats)
+
+# Export summary
+write.csv(summary_stats, "output/statistical_summary.csv", row.names = FALSE)
+cat("\nSummary saved to output/statistical_summary.csv\n")
+```
+
+---
+
+## Conclusion
+
+This module has covered the fundamental concepts of statistics:
+
+1. **Statistics and Data Analysis** - Understanding data patterns and relationships
+2. **Measures of Central Tendency** - Mean, Median, and Mode describe typical values
+3. **Measures of Dispersion** - Range, Variance, SD, and IQR describe spread
+4. **Moments, Skewness, and Kurtosis** - Describe distribution shape and characteristics
+
+These tools form the foundation for more advanced statistical methods and hypothesis testing.
+
+---
+
+## Exercises
+
+1.  **Arrival Delay Analysis**:
+    Calculate the mean, median, and standard deviation for `arr_delay` (arrival delays). How do these compare to the statistics for departure delays calculated earlier?
+
+2.  **Carrier Variability**:
+    Which airline carrier has the most consistent arrival times? Calculate the standard deviation of `arr_delay` for each carrier and identify the one with the lowest value.
+
+3.  **Speed Distribution**:
+    Create a new variable called `speed_mph` by calculating `distance / (air_time / 60)`.
+    - Calculate the mean and median speed.
+    - Visualize the distribution of flight speeds using a histogram.
+    - Is the distribution symmetric or skewed? Calculate the skewness to confirm.
+
+4.  **Interval Data Statistics**:
+    Convert the `dep_delay` variable from point data to interval data (grouped data) by creating bins (e.g., using `cut()`).
+    - Redo the statistics (mean, standard deviation, and quartiles).
+    - Compare the results with the statistics calculated from the original point data.
+
+5.  **Random Variables and Distributions**:
+    Let $X$ be the random variable representing departure delay.
+    - Calculate the expected value $E[X]$ and variance $Var(X)$ from the data.
+    - Visualize the probability density function (PDF) of $X$.
+    - Based on the shape, skewness, and kurtosis, discuss which theoretical distribution might fit the data.
+
+6.  **On-time Performance Test**:
+    Conduct a hypothesis test to check if there is an association between the origin airport (`origin`) and whether a flight arrives on time (within 5 minutes of scheduled arrival).
+    - Create a contingency table.
+    - Run a Chi-squared test.
+    - Interpret the results.
+
+---
+
+## References
+
+- Wickham, H. (2016). ggplot2: Elegant Graphics for Data Analysis.
+- James, G., Witten, D., Hastie, T., & Tibshirani, R. (2013). An Introduction to Statistical Learning.
+- nycflights13 R Package: https://github.com/hadley/nycflights13
