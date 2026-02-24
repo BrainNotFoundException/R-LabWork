@@ -50,10 +50,17 @@ We see a lower mean arrival delay and lower median arrival delay but a higher st
     **Carrier Variability**:
     Which airline carrier has the most consistent arrival times? Calculate the standard deviation of `arr_delay` for each carrier and identify the one with the lowest value.
 
-
 ### Problem Solution:
 ``` {r}
+airline_summary <- flights %>%
+    group_by(carrier) %>%
+    summarise(
+        sd_delay = sd(arr_delay, na.rm = TRUE),
+    ) %>%
+    arrange(desc(sd_delay))
+print(airline_summary)
 ```
+It is observed that the airline carrier "US" shows the least standard deviation in the entire table.
 ---
 ---
 ## 3
@@ -67,6 +74,12 @@ We see a lower mean arrival delay and lower median arrival delay but a higher st
 
 ### Problem Solution:
 ```{r}
+flights["speed_mph"] = flights["distance"] / (flights["air_time"] / 60)
+print(names(flights))
+flights["speed_mph"]
+
+mean(flights$speed_mph, na.rm=TRUE)
+median(flights$speed_mph, na.rm=TRUE)
 ```
 ---
 
